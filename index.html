@@ -147,8 +147,8 @@
 
     <div class="card">
       <h2>Mode 2: Percentage of Total</h2>
-      <input id="val1" type="number" placeholder="First value (e.g. 40)" />
-      <input id="val2" type="number" placeholder="Second value (e.g. 60)" />
+      <input id="val1" type="number" placeholder="First value (e.g. 40 or 40.5)" />
+      <input id="val2" type="number" placeholder="Second value (e.g. 40 or 40.5)" />
       <input id="percents" placeholder="Percentage (e.g. 40 or 40,60)" />
       <button onclick="calculateMode2()">Calculate</button>
       <pre id="output2"></pre>
@@ -177,9 +177,9 @@
       const b2_66 = (66 * p2).toFixed(1);
 
       out.textContent = `${val} - ${val2}
-      23: ${b1_23}, ${b2_23}
-      62.5% of 23: ${b1_62}, ${b2_62}
-      66: ${b1_66}, ${b2_66}`;
+23: ${b1_23}, ${b2_23}
+62.5% of 23: ${b1_62}, ${b2_62}
+66: ${b1_66}, ${b2_66}`;
     }
 
     function calculateMode2() {
