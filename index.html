@@ -4,15 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Percentage Calculator</title>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
   <style>
     :root {
       --bg: #f5f5f5;
-      --text: #222;
-      --card: #fff;
+      --text: #222222;
+      --card: #ffffff;
       --button-bg: #3498db;
-      --button-text: #fff;
-      --input-bg: #fff;
+      --button-text: white;
+      --input-bg: #ffffff;
       --pre-bg: #f0f0f0;
     }
 
@@ -21,8 +21,8 @@
       --text: #e0e0e0;
       --card: #1c1c1c;
       --button-bg: #2980b9;
-      --button-text: #fff;
-      --input-bg: #222;
+      --button-text: #ffffff;
+      --input-bg: #222222;
       --pre-bg: #2b2b2b;
     }
 
@@ -59,7 +59,7 @@
       box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
     }
 
-    input, button {
+    input, pre {
       width: 100%;
       padding: 12px;
       margin-top: 6px;
@@ -71,10 +71,13 @@
       color: var(--text);
     }
 
+    input:focus {
+      outline: none;
+      border-color: var(--button-bg);
+    }
+
     pre {
       background: var(--pre-bg);
-      padding: 14px;
-      border-radius: 8px;
       white-space: pre-wrap;
       font-size: 15px;
       border: 1px solid rgba(0, 0, 0, 0.05);
@@ -98,27 +101,6 @@
 
     .theme-toggle button:hover {
       background: rgba(0, 0, 0, 0.05);
-    }
-
-    .upload-btn {
-      display: block;
-      width: 100%;
-      text-align: center;
-      padding: 12px;
-      background-color: var(--button-bg);
-      color: var(--button-text);
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-
-    .upload-btn:hover {
-      background-color: #2d8ad2;
-    }
-
-    input[type="file"] {
-      display: none;
     }
 
     @keyframes fadeIn {
@@ -150,92 +132,19 @@
 
     <div class="card">
       <h2>Mode 2: Percentage of Total</h2>
-      <input id="val1" type="number" placeholder="First value (e.g. 290.5)" />
-      <input id="val2" type="number" placeholder="Second value (e.g. 1452.6)" />
-      <input id="percents" type="text" placeholder="Percentage (autofilled from above)" />
-      <label for="ocrImage" class="upload-btn">📷 Upload Image with Two Numbers</label>
-      <input type="file" id="ocrImage" accept="image/*" />
+      <input id="val1" type="number" placeholder="First value (e.g. 40)" />
+      <input id="val2" type="number" placeholder="Second value (e.g. 60)" />
       <pre id="output2"></pre>
+    </div>
+
+    <div class="card">
+      <h2>Detect from Image</h2>
+      <input type="file" id="imgInput" accept="image/*" />
+      <pre id="output3">Upload an image with two numbers.</pre>
     </div>
   </div>
 
   <script>
-    const numInput = document.getElementById("numInput");
-    const val1Input = document.getElementById("val1");
-    const val2Input = document.getElementById("val2");
-    const percentInput = document.getElementById("percents");
-
-    function calculateMode1() {
-      const val = parseInt(numInput.value);
-      const out = document.getElementById("output1");
-
-      if (isNaN(val) || val < 0 || val > 100) {
-        out.textContent = "Enter a number between 0 and 100.";
-        return;
-      }
-
-      const val2 = 100 - val;
-      const p1 = val / 100;
-      const p2 = val2 / 100;
-
-      const b1_23 = (23 * p1).toFixed(1);
-      const b2_23 = (23 * p2).toFixed(1);
-      const b1_62 = (b1_23 * 0.625).toFixed(1);
-      const b2_62 = (b2_23 * 0.625).toFixed(1);
-      const b1_66 = (66 * p1).toFixed(1);
-      const b2_66 = (66 * p2).toFixed(1);
-
-      out.textContent = [
-        `${val} - ${val2}`,
-        `23: ${b1_23}, ${b2_23}`,
-        `62.5% of 23: ${b1_62}, ${b2_62}`,
-        `66: ${b1_66}, ${b2_66}`
-      ].join('\n');
-
-      // Autofill the percentage field in Mode 2
-      percentInput.value = `${val}, ${100 - val}`;
-      calculateMode2();
-    }
-
-    function calculateMode2() {
-      const a = parseFloat(val1Input.value);
-      const b = parseFloat(val2Input.value);
-      const percents = percentInput.value.trim();
-      const out = document.getElementById("output2");
-
-      if (isNaN(a) || isNaN(b)) {
-        out.textContent = "Enter valid numbers.";
-        return;
-      }
-
-      const total = a + b;
-      let raw = percents.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
-
-      if (raw.length === 1) {
-        const p1 = raw[0];
-        if (p1 < 0 || p1 > 100) {
-          out.textContent = "Percentage must be 0–100.";
-          return;
-        }
-        raw = [p1, 100 - p1];
-      } else if (raw.length === 2) {
-        if (Math.round(raw[0] + raw[1]) !== 100) {
-          out.textContent = "Total percentage must be 100.";
-          return;
-        }
-      } else {
-        out.textContent = "Enter 1 or 2 comma-separated percentages.";
-        return;
-      }
-
-      let result = `Total: ${total}\n`;
-      raw.forEach(p => {
-        result += `${p}% of ${total} = ${(p / 100 * total).toFixed(2)}\n`;
-      });
-      out.textContent = result;
-    }
-
-    // Theme
     const iconEl = document.getElementById("theme-icon");
 
     function updateThemeIcon(theme) {
@@ -245,12 +154,10 @@
     function applyTheme() {
       const setting = localStorage.getItem("theme") || "auto";
       let actual = setting;
-
       if (setting === "auto") {
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         actual = prefersDark ? "dark" : "light";
       }
-
       document.documentElement.setAttribute("data-theme", actual);
       updateThemeIcon(setting);
     }
@@ -264,35 +171,99 @@
 
     applyTheme();
 
-    // Event bindings
-    numInput.addEventListener("input", calculateMode1);
-    val1Input.addEventListener("input", calculateMode2);
-    val2Input.addEventListener("input", calculateMode2);
-    percentInput.addEventListener("input", calculateMode2);
-
-    // OCR handling
-    async function handleOCR(inputId) {
-      const file = document.getElementById(inputId).files[0];
-      if (!file) return;
-
-      const result = await Tesseract.recognize(file, 'eng', {
-        logger: m => console.log(m)
-      });
-
-      const text = result.data.text;
-      const matches = text.match(/[\d,]+\.\d+/g);
-
-      if (matches && matches.length >= 2) {
-        const nums = matches.map(s => parseFloat(s.replace(/,/g, '')));
-        val1Input.value = nums[0];
-        val2Input.value = nums[1];
-        calculateMode2();
-      } else {
-        alert("Could not find two numbers in the image.");
+    function calculateMode1(val) {
+      const out = document.getElementById("output1");
+      if (isNaN(val) || val < 0 || val > 100) {
+        out.textContent = "Enter a number between 0 and 100.";
+        return;
       }
+      const val2 = 100 - val;
+      const p1 = val / 100;
+      const p2 = val2 / 100;
+      const b1_23 = (23 * p1).toFixed(1);
+      const b2_23 = (23 * p2).toFixed(1);
+      const b1_62 = (b1_23 * 0.625).toFixed(1);
+      const b2_62 = (b2_23 * 0.625).toFixed(1);
+      const b1_66 = (66 * p1).toFixed(1);
+      const b2_66 = (66 * p2).toFixed(1);
+      out.textContent = [
+        `${val} - ${val2}`,
+        `23: ${b1_23}, ${b2_23}`,
+        `62.5% of 23: ${b1_62}, ${b2_62}`,
+        `66: ${b1_66}, ${b2_66}`
+      ].join('\n');
+      calculateMode2FromPercentage(val);
     }
 
-    document.getElementById("ocrImage").addEventListener("change", () => handleOCR("ocrImage"));
+    function calculateMode2FromPercentage(p1) {
+      const a = parseFloat(document.getElementById("val1").value);
+      const b = parseFloat(document.getElementById("val2").value);
+      const out = document.getElementById("output2");
+      if (isNaN(a) || isNaN(b)) {
+        out.textContent = "Enter valid numbers.";
+        return;
+      }
+      const total = a + b;
+      const p2 = 100 - p1;
+      let result = `Total: ${total}\n`;
+      [p1, p2].forEach(p => {
+        result += `${p}% of ${total} = ${(p / 100 * total).toFixed(2)}\n`;
+      });
+      out.textContent = result;
+    }
+
+    document.getElementById("numInput").addEventListener("input", e => {
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val)) {
+        calculateMode1(val);
+      }
+    });
+
+    document.getElementById("val1").addEventListener("input", () => {
+      const percent = parseFloat(document.getElementById("numInput").value);
+      if (!isNaN(percent)) calculateMode2FromPercentage(percent);
+    });
+
+    document.getElementById("val2").addEventListener("input", () => {
+      const percent = parseFloat(document.getElementById("numInput").value);
+      if (!isNaN(percent)) calculateMode2FromPercentage(percent);
+    });
+
+    document.getElementById("imgInput").addEventListener("change", handleOCR);
+
+    async function handleOCR() {
+      const file = document.getElementById("imgInput").files[0];
+      if (!file) return;
+      const out = document.getElementById("output3");
+      out.textContent = "Processing...";
+      const result = await Tesseract.recognize(file, 'eng');
+      const numbers = [];
+      result.data.words.forEach(word => {
+        let cleaned = word.text.replace(/[^\d.,]/g, '');
+        if (cleaned.includes(',') && cleaned.includes('.')) {
+          cleaned = cleaned.replace(/,/g, '');
+        } else if ((cleaned.match(/,/g) || []).length === 1 && !cleaned.includes('.')) {
+          cleaned = cleaned.replace(',', '.');
+        }
+        const parsed = parseFloat(cleaned);
+        if (!isNaN(parsed)) {
+          numbers.push({ value: parsed, y: word.bbox.y0 });
+        }
+      });
+      if (numbers.length < 2) {
+        out.textContent = "Could not find two numbers.";
+        return;
+      }
+      numbers.sort((a, b) => a.y - b.y);
+      const first = numbers[0].value;
+      const second = numbers[1].value;
+      document.getElementById("val1").value = first;
+      document.getElementById("val2").value = second;
+      const percent = ((first / (first + second)) * 100).toFixed(1);
+      document.getElementById("numInput").value = percent;
+      calculateMode1(parseFloat(percent));
+      out.textContent = `Extracted: ${first}, ${second}`;
+    }
   </script>
 </body>
 </html>
