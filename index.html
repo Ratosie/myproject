@@ -4,14 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Percentage Calculator</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <style>
     :root {
       --bg: #f5f5f5;
-      --text: #222222;
-      --card: #ffffff;
+      --text: #222;
+      --card: #fff;
       --button-bg: #3498db;
-      --button-text: white;
-      --input-bg: #ffffff;
+      --button-text: #fff;
+      --input-bg: #fff;
       --pre-bg: #f0f0f0;
     }
 
@@ -20,8 +21,8 @@
       --text: #e0e0e0;
       --card: #1c1c1c;
       --button-bg: #2980b9;
-      --button-text: #ffffff;
-      --input-bg: #222222;
+      --button-text: #fff;
+      --input-bg: #222;
       --pre-bg: #2b2b2b;
     }
 
@@ -58,7 +59,7 @@
       box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
     }
 
-    input {
+    input, button {
       width: 100%;
       padding: 12px;
       margin-top: 6px;
@@ -68,16 +69,6 @@
       border: 1px solid #ccc;
       background-color: var(--input-bg);
       color: var(--text);
-    }
-
-    input:focus {
-      outline: none;
-      border-color: var(--button-bg);
-    }
-
-    input.invalid {
-      border-color: red;
-      background-color: #ffe6e6;
     }
 
     pre {
@@ -109,6 +100,27 @@
       background: rgba(0, 0, 0, 0.05);
     }
 
+    .upload-btn {
+      display: block;
+      width: 100%;
+      text-align: center;
+      padding: 12px;
+      background-color: var(--button-bg);
+      color: var(--button-text);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .upload-btn:hover {
+      background-color: #2d8ad2;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -133,37 +145,32 @@
     <div class="card">
       <h2>Mode 1: Single Number (0–100)</h2>
       <input id="numInput" type="number" min="0" max="100" placeholder="e.g. 60" />
-      <pre id="output1" aria-live="polite"></pre>
+      <pre id="output1"></pre>
     </div>
 
     <div class="card">
       <h2>Mode 2: Percentage of Total</h2>
-      <input id="val1" type="number" placeholder="First value (e.g. 40)" />
-      <input id="val2" type="number" placeholder="Second value (e.g. 60)" />
-      <input id="percents" type="number" placeholder="Percentage (e.g. 40 or 40,60)" />
-      <pre id="output2" aria-live="polite"></pre>
+      <input id="val1" type="number" placeholder="First value (e.g. 290.5)" />
+      <input id="val2" type="number" placeholder="Second value (e.g. 1452.6)" />
+      <input id="percents" type="text" placeholder="Percentage (autofilled from above)" />
+      <label for="ocrImage" class="upload-btn">📷 Upload Image with Two Numbers</label>
+      <input type="file" id="ocrImage" accept="image/*" />
+      <pre id="output2"></pre>
     </div>
   </div>
 
   <script>
-    function debounce(fn, delay = 300) {
-      let timeout;
-      return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => fn.apply(this, args), delay);
-      };
-    }
+    const numInput = document.getElementById("numInput");
+    const val1Input = document.getElementById("val1");
+    const val2Input = document.getElementById("val2");
+    const percentInput = document.getElementById("percents");
 
     function calculateMode1() {
-      const input = document.getElementById("numInput");
-      const val = parseInt(input.value);
+      const val = parseInt(numInput.value);
       const out = document.getElementById("output1");
-
-      input.classList.remove("invalid");
 
       if (isNaN(val) || val < 0 || val > 100) {
         out.textContent = "Enter a number between 0 and 100.";
-        input.classList.add("invalid");
         return;
       }
 
@@ -184,51 +191,40 @@
         `62.5% of 23: ${b1_62}, ${b2_62}`,
         `66: ${b1_66}, ${b2_66}`
       ].join('\n');
+
+      // Autofill the percentage field in Mode 2
+      percentInput.value = `${val}, ${100 - val}`;
+      calculateMode2();
     }
 
     function calculateMode2() {
-      const aInput = document.getElementById("val1");
-      const bInput = document.getElementById("val2");
-      const percInput = document.getElementById("percents");
+      const a = parseFloat(val1Input.value);
+      const b = parseFloat(val2Input.value);
+      const percents = percentInput.value.trim();
       const out = document.getElementById("output2");
-
-      aInput.classList.remove("invalid");
-      bInput.classList.remove("invalid");
-      percInput.classList.remove("invalid");
-
-      const a = parseFloat(aInput.value);
-      const b = parseFloat(bInput.value);
-      let rawInput = percInput.value.replace(/[%\s]+/g, '');
 
       if (isNaN(a) || isNaN(b)) {
         out.textContent = "Enter valid numbers.";
-        if (isNaN(a)) aInput.classList.add("invalid");
-        if (isNaN(b)) bInput.classList.add("invalid");
         return;
       }
 
       const total = a + b;
-      let raw = rawInput.split(',')
-        .map(s => parseFloat(s.trim()))
-        .filter(n => !isNaN(n));
+      let raw = percents.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
 
       if (raw.length === 1) {
         const p1 = raw[0];
         if (p1 < 0 || p1 > 100) {
           out.textContent = "Percentage must be 0–100.";
-          percInput.classList.add("invalid");
           return;
         }
         raw = [p1, 100 - p1];
       } else if (raw.length === 2) {
         if (Math.round(raw[0] + raw[1]) !== 100) {
           out.textContent = "Total percentage must be 100.";
-          percInput.classList.add("invalid");
           return;
         }
       } else {
         out.textContent = "Enter 1 or 2 comma-separated percentages.";
-        percInput.classList.add("invalid");
         return;
       }
 
@@ -239,15 +235,7 @@
       out.textContent = result;
     }
 
-    const debouncedMode1 = debounce(calculateMode1);
-    const debouncedMode2 = debounce(calculateMode2);
-
-    document.getElementById("numInput").addEventListener("input", debouncedMode1);
-    ["val1", "val2", "percents"].forEach(id => {
-      document.getElementById(id).addEventListener("input", debouncedMode2);
-    });
-
-    // Theme toggle
+    // Theme
     const iconEl = document.getElementById("theme-icon");
 
     function updateThemeIcon(theme) {
@@ -257,10 +245,12 @@
     function applyTheme() {
       const setting = localStorage.getItem("theme") || "auto";
       let actual = setting;
+
       if (setting === "auto") {
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         actual = prefersDark ? "dark" : "light";
       }
+
       document.documentElement.setAttribute("data-theme", actual);
       updateThemeIcon(setting);
     }
@@ -273,6 +263,36 @@
     }
 
     applyTheme();
+
+    // Event bindings
+    numInput.addEventListener("input", calculateMode1);
+    val1Input.addEventListener("input", calculateMode2);
+    val2Input.addEventListener("input", calculateMode2);
+    percentInput.addEventListener("input", calculateMode2);
+
+    // OCR handling
+    async function handleOCR(inputId) {
+      const file = document.getElementById(inputId).files[0];
+      if (!file) return;
+
+      const result = await Tesseract.recognize(file, 'eng', {
+        logger: m => console.log(m)
+      });
+
+      const text = result.data.text;
+      const matches = text.match(/[\d,]+\.\d+/g);
+
+      if (matches && matches.length >= 2) {
+        const nums = matches.map(s => parseFloat(s.replace(/,/g, '')));
+        val1Input.value = nums[0];
+        val2Input.value = nums[1];
+        calculateMode2();
+      } else {
+        alert("Could not find two numbers in the image.");
+      }
+    }
+
+    document.getElementById("ocrImage").addEventListener("change", () => handleOCR("ocrImage"));
   </script>
 </body>
 </html>
