@@ -231,11 +231,12 @@
 
     document.getElementById("imgInput").addEventListener("change", handleOCR);
 
-    async function handleOCR() {
+        async function handleOCR() {
       const file = document.getElementById("imgInput").files[0];
       if (!file) return;
       const out = document.getElementById("output3");
       out.textContent = "Processing...";
+    
       const result = await Tesseract.recognize(file, 'eng');
       const numbers = [];
       result.data.words.forEach(word => {
@@ -250,18 +251,33 @@
           numbers.push({ value: parsed, y: word.bbox.y0 });
         }
       });
+    
       if (numbers.length < 2) {
         out.textContent = "Could not find two numbers.";
         return;
       }
+    
+      // Sort by vertical position
       numbers.sort((a, b) => a.y - b.y);
       const first = numbers[0].value;
       const second = numbers[1].value;
+    
+      // Only update Mode 2 inputs
       document.getElementById("val1").value = first;
       document.getElementById("val2").value = second;
-      const percent = ((first / (first + second)) * 100).toFixed(1);
-      document.getElementById("numInput").value = percent;
-      calculateMode1(parseFloat(percent));
+    
+      // Calculate Mode 2 directly
+      const total = first + second;
+      const p1 = ((first / total) * 100).toFixed(1);
+      const p2 = (100 - p1).toFixed(1);
+    
+      let resultText = `Total: ${total}\n`;
+      resultText += `${p1}% of ${total} = ${(p1 / 100 * total).toFixed(2)}\n`;
+      resultText += `${p2}% of ${total} = ${(p2 / 100 * total).toFixed(2)}`;
+    
+      document.getElementById("output2").textContent = resultText;
+    
+      // Display extracted numbers in image section
       out.textContent = `Extracted: ${first}, ${second}`;
     }
   </script>
